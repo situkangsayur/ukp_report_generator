@@ -35,3 +35,6 @@ tags
 
 *.log
 .vscode
+
+*.xls
+*.xlsx

@@ -1,0 +1,37 @@
+# python compiled file
+*.pyc
+
+# temp editing files
+.*.swap
+.*.swp
+.*.swo
+
+# env dir
+venv
+
+# info
+*.*-info
+
+# build
+build
+
+# distribution files
+dist
+*.egg
+build
+
+# intellij idea project directory
+.idea
+
+# virtual env
+venv
+
+# migration
+migrations
+
+*.out
+
+tags
+
+*.log
+.vscode

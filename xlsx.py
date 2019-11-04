@@ -8,15 +8,12 @@ import copy
 
 class Data(object):
 
-    def __init__(self, target = 0,target_loc = (0,0), 
-                 var_loc = (0,0), data = []):
-        self.target = target
-        self.target_loc = target_loc
-        self.var_loc = var_loc
+    def __init__(self, fields =  [], data = []):
+        self.fields = fields
         self.data = data
     
     def __str__(self):
-        str = 'target : {0} \ntarget_loc : {1} \nvar_loc : {2} \ndata : {3}'.format(self.target, self.target_loc, self.var_loc, self.data)
+        str = 'fields : {0}  \ndata : {1}'.format(self.fields, self.data)
         return str
 
 class UkpManager(object):
@@ -29,28 +26,46 @@ class UkpManager(object):
 
         sheet_name = self.wbread.sheet_names()
 
-        # get target
-        target = self.ref_data[0].target_loc.split(',')
-        pos_target = string.ascii_lowercase.index(target[0])
-        target_val = self.ref_data[0].target * 0.15
+        style = "font: name Candara, height 280; align: horiz center, vert center; borders: left 1, top 1, bottom 1, right 1;"
 
-        var_loc = self.ref_data[0].var_loc.split(',')
-        pos_var = string.ascii_lowercase.index(var_loc[0])
+        
+        for data_sh in self.ref_data:
+            
 
-        for ref in self.ref_data[0].data:
-
+            # create workbook write and copy workbook read
             wbwrite = shcopy(self.wbread)
+            
+            template_sheet = wbwrite.get_sheet(0)
 
-            next = wbwrite._Workbook__worksheets[0]
-            next.set_name('add new')
-            print(str(pos_target) + ';' + str(pos_var))
-            next.write(int(target[1]) - 1, pos_target, target_val , xlwt.easyxf("font: name Candara, height 280; align: horiz center, vert center"))
-            print(ref[2]) 
-            next.write(int(var_loc[1]) - 1, pos_var, ref[2] , xlwt.easyxf("font: name Candara, height 280; align: horiz center, vert center"))
+            new_sheets = []
 
-            #wbwrite._Workbook__worksheets = [next]
+            for ref in data_sh.data:
+                
+                #next = wbwrite.add_sheet(ref[0])
 
-            wbwrite.save('pkp_pkm_cianjur' + ref[0] +'.xls')
+                next = copy.copy(template_sheet)
+
+                for col in data_sh.fields[1:]:
+
+                    # get target
+                    coor = col.split(',')
+                    pos_x = string.ascii_lowercase.index(coor[0])
+                    pos_y = int(coor[1])
+                    data_idx = data_sh.fields.index(col) 
+                    value = ref[data_idx]
+
+                    real_val =  value if (type(value) != str) else (value  if value[0] != '~' else xlwt.Formula(value[1:]))
+
+                    next.write(pos_y - 1, pos_x, real_val, xlwt.easyxf(style))
+
+                next.set_name('capaian kegiatan ' + ref[0])
+
+                new_sheets.append(copy.deepcopy(next))
+
+
+            wbwrite._Workbook__worksheets = new_sheets
+            wbwrite.save('pkp_pkm_cianjur.xls')
+        print('done')
 
     def load_data_xls(self, path):
         self.data_wb_read = xlrd.open_workbook(path)
@@ -59,30 +74,31 @@ class UkpManager(object):
 
         data = []
         for sh in worksheets:
-            target = sh.cell(0,0).value
-            target_loc = sh.cell(0,1).value
-            var_loc = sh.cell(0,2).value
-            d = Data(target = target, 
-                     target_loc = target_loc, var_loc = var_loc)
+            
+            d = Data()
             data_rows = []
             is_empty = False
-            for row in  range(1, sh.nrows):
+           
+            for row in  range(0, sh.nrows):
                 
                 data_cols = []
                 for col in range(0, sh.ncols):
 
                     temp = sh.cell_value(row, col)
-                    if temp != '' and row == 0:
+
+                    if temp == '':
                         is_empty = True
+                        break
 
                     data_cols.append(temp)
 
-                    if is_empty:
-                        break
-
                 if is_empty:
                     break
-                data_rows.append(copy.deepcopy(data_cols))
+
+                if row == 0:
+                    d.fields = copy.deepcopy(data_cols)
+                else:
+                    data_rows.append(copy.deepcopy(data_cols))
 
             d.data = copy.deepcopy(data_rows)
             data.append(d)

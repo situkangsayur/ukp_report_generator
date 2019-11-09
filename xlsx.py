@@ -19,7 +19,7 @@ class Data(object):
 class UkpManager(object):
 
 
-    def generate_using_template_xlsx(self, path, encoding = None):
+    def generate_using_template_xlsx(self, path, encoding = None, output_path = None):
         self.wbread = xlrd.open_workbook(path,formatting_info=True, encoding_override = encoding) if encoding else xlrd.open_workbook(path,formatting_info=True)
 
         worksheet = self.wbread.sheets()
@@ -49,7 +49,7 @@ class UkpManager(object):
 
                     # get target
                     coor = col.split(',')
-                    pos_x = string.ascii_lowercase.index(coor[0])
+                    pos_x = string.ascii_uppercase.index(coor[0])
                     pos_y = int(coor[1])
                     data_idx = data_sh.fields.index(col) 
                     value = ref[data_idx]
@@ -64,7 +64,7 @@ class UkpManager(object):
 
 
             wbwrite._Workbook__worksheets = new_sheets
-            wbwrite.save('pkp_pkm_cianjur.xls')
+            wbwrite.save('pkp_pkm_cianjur.xls' if output_path == None else output_path+ '/pkp_pkm_cianjur.xls')
         print('done')
 
     def load_data_xls(self, path):
@@ -82,17 +82,19 @@ class UkpManager(object):
             for row in  range(0, sh.nrows):
                 
                 data_cols = []
-                for col in range(0, sh.ncols):
+                empty_col = 0
+                for col in range(1, sh.ncols):
 
-                    temp = sh.cell_value(row, col)
+                    if sh.cell_value(0, col) != '':
+                        temp = sh.cell_value(row, col)
 
-                    if temp == '':
-                        is_empty = True
-                        break
+                        if temp == '':
+                            empty_col += 1
+                            break
 
-                    data_cols.append(temp)
+                        data_cols.append(temp)
 
-                if is_empty:
+                if empty_col > 1:
                     break
 
                 if row == 0:
